@@ -1,0 +1,258 @@
+{% extends 'calculator/base.html' %}
+{% load calculator_extras %}
+{% load currency_tags %}
+
+{% block title %}{{ object.name }} - Configuration Details{% endblock %}
+{% block header_title %}Configuration Details{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Configuration Header -->
+    <div class="card mb-4">
+        <div class="card-body p-4" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); border-radius: 0.75rem;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h3 class="text-white mb-2">{{ object.name }}</h3>
+                    {% if object.description %}
+                        <p class="text-white-50 mb-3">{{ object.description }}</p>
+                    {% endif %}
+                    <div class="d-flex flex-wrap gap-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-project-diagram text-white-50 me-2"></i>
+                            <span class="text-white-50">Project: 
+                                <a href="{% url 'project_detail' object.project.id %}" class="text-white text-decoration-none">
+                                    {{ object.project.name }}
+                                </a>
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user text-white-50 me-2"></i>
+                            <span class="text-white-50">Created by: 
+                                <span class="text-white">{{ object.created_by|default:"System" }}</span>
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar text-white-50 me-2"></i>
+                            <span class="text-white-50">Created: 
+                                <span class="text-white">{{ object.created_at|date:"M d, Y" }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'serverconfiguration_edit' object.id %}" class="btn btn-light">
+                        <i class="fas fa-edit me-2"></i>Edit Configuration
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Cost Summary -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Cost Summary</h5>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Hardware Cost:</span>
+                            <span class="fw-medium">{{ hardware_cost|currency }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">License Cost:</span>
+                            <span class="fw-medium">{{ license_cost|currency }}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-medium">Total Cost:</span>
+                            <span class="fw-bold fs-5">{{ total_cost|currency }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hardware Specifications -->
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Hardware Specifications</h5>
+                    <div class="row g-4">
+                        <!-- CPU -->
+                        {% if object.cpu %}
+                        <div class="col-md-6">
+                            <div class="spec-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-microchip text-primary me-2"></i>
+                                    <h6 class="mb-0">CPU</h6>
+                                </div>
+                                <div class="spec-details">
+                                    <p class="mb-1">{{ object.cpu.name }}</p>
+                                    <small class="text-muted">
+                                        {{ object.cpu.cores }} cores / {{ object.cpu.threads }} threads
+                                        <br>
+                                        {{ object.cpu.clock_speed }}GHz
+                                        {% if object.cpu.power_consumption_watts %}
+                                        <br>
+                                        {{ object.cpu.power_consumption_watts }}W TDP
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- RAM -->
+                        {% if object.ram %}
+                        <div class="col-md-6">
+                            <div class="spec-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-memory text-success me-2"></i>
+                                    <h6 class="mb-0">Memory</h6>
+                                </div>
+                                <div class="spec-details">
+                                    <p class="mb-1">{{ object.ram.name }}</p>
+                                    <small class="text-muted">
+                                        {{ object.ram.capacity_gb }}GB {{ object.ram.get_ram_type_display }}
+                                        <br>
+                                        {{ object.ram.speed }}MHz
+                                        {% if object.ram.latency_ns %}
+                                        <br>
+                                        CL{{ object.ram.latency_ns }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Storage -->
+                        {% if object.storage %}
+                        <div class="col-md-6">
+                            <div class="spec-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-hdd text-info me-2"></i>
+                                    <h6 class="mb-0">Storage</h6>
+                                </div>
+                                <div class="spec-details">
+                                    <p class="mb-1">{{ object.storage.name }}</p>
+                                    <small class="text-muted">
+                                        {{ object.storage.capacity }} {{ object.storage.get_capacity_unit_display }}
+                                        <br>
+                                        {{ object.storage.get_storage_type_display }} / {{ object.storage.get_interface_display }}
+                                        {% if object.storage.form_factor %}
+                                        <br>
+                                        {{ object.storage.form_factor }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- GPU -->
+                        {% if object.gpu %}
+                        <div class="col-md-6">
+                            <div class="spec-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-tv text-warning me-2"></i>
+                                    <h6 class="mb-0">Graphics</h6>
+                                </div>
+                                <div class="spec-details">
+                                    <p class="mb-1">{{ object.gpu.name }}</p>
+                                    <small class="text-muted">
+                                        {{ object.gpu.memory_gb }}GB VRAM
+                                        {% if object.gpu.clock_speed %}
+                                        <br>
+                                        {{ object.gpu.clock_speed }}MHz
+                                        {% endif %}
+                                        {% if object.gpu.power_consumption_watts %}
+                                        <br>
+                                        {{ object.gpu.power_consumption_watts }}W TDP
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Network -->
+                        {% if object.network_card %}
+                        <div class="col-md-6">
+                            <div class="spec-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-network-wired text-danger me-2"></i>
+                                    <h6 class="mb-0">Network</h6>
+                                </div>
+                                <div class="spec-details">
+                                    <p class="mb-1">{{ object.network_card.name }}</p>
+                                    <small class="text-muted">
+                                        {{ object.network_card.speed_gbps }}Gbps
+                                        <br>
+                                        {{ object.network_card.get_interface_display }}
+                                        {% if object.network_card.port_type %}
+                                        <br>
+                                        {{ object.network_card.port_type }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Operating System -->
+                        {% if object.os %}
+                        <div class="col-md-6">
+                            <div class="spec-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-desktop text-secondary me-2"></i>
+                                    <h6 class="mb-0">Operating System</h6>
+                                </div>
+                                <div class="spec-details">
+                                    <p class="mb-1">{{ object.os }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if object.notes %}
+    <!-- Notes -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Notes</h5>
+                    <p class="mb-0">{{ object.notes|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .spec-item {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        height: 100%;
+    }
+    
+    .spec-details {
+        padding-left: 2rem;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+</style>
+{% endblock %} 

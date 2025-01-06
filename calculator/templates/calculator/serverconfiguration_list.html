@@ -1,0 +1,405 @@
+{% extends 'calculator/base.html' %}
+
+{% load currency_tags %}
+
+{% block content %}
+    <!-- Header Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card action-card">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Manage Server Configurations</h5>
+                        <p class="mb-0 text-white-50">Create and manage your server configurations</p>
+                    </div>
+                    <a href="{% url 'serverconfiguration_create' %}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>New Configuration
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configurations List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Search and Filter -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="search-box">
+                                <div class="position-relative">
+                                    <input type="text" class="form-control pe-5" id="configSearch" placeholder="Search configurations...">
+                                    <i class="fas fa-search position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                                </div>
+                            </div>
+                            <select class="form-select" id="filterSelect" style="width: auto;">
+                                <option value="all">All Configurations</option>
+                                <option value="recent">Recently Updated</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-light" id="exportButton">
+                                <i class="fas fa-download me-2"></i>Export
+                            </button>
+                        </div>
+                    </div>
+
+                    {% if object_list %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;"></th>
+                                        <th>Name</th>
+                                        <th>CPU Cores</th>
+                                        <th>Memory (GB)</th>
+                                        <th>Storage (GB)</th>
+                                        <th style="width: 100px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for config in object_list %}
+                                    <tr data-id="{{ config.pk }}">
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 32px; height: 32px;">
+                                                <i class="fas fa-server text-primary"></i>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-medium">{{ config.name }}</div>
+                                        </td>
+                                        <td>{{ config.cpu.cores|default:"N/A" }}</td>
+                                        <td>{{ config.ram.capacity_gb|default:"N/A" }}</td>
+                                        <td>{{ config.storage.capacity|default:"N/A" }}</td>
+                                        <td class="text-end">
+                                            <div class="d-flex flex-column align-items-end">
+                                                <span>{{ config.calculate_hardware_cost|currency }}</span>
+                                                <small class="text-muted">Hardware</small>
+                                            </div>
+                                            <div class="d-flex flex-column align-items-end mt-1">
+                                                <span>{{ config.calculate_license_costs|currency }}</span>
+                                                <small class="text-muted">Licenses</small>
+                                            </div>
+                                            <div class="d-flex flex-column align-items-end mt-1 fw-bold">
+                                                <span>{{ config.calculate_total_cost|currency }}</span>
+                                                <small class="text-muted">Total</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <a href="{% url 'serverconfiguration_update' config.pk %}" class="btn btn-sm btn-light" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-light" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteModal{{ config.pk }}">
+                                                    <i class="fas fa-trash text-danger"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if object_list|length > 0 %}
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <div class="text-muted">
+                                    Showing {{ page_start|add:"1" }} to {{ page_end }} of {{ object_list|length }} entries
+                                </div>
+                                <nav aria-label="Configuration navigation">
+                                    <ul class="pagination mb-0">
+                                        <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                                            <a class="page-link" href="?page={{ current_page|add:"-1" }}" aria-label="<<">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                        {% for page_num in page_range %}
+                                            <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                                                <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                                            </li>
+                                        {% endfor %}
+                                        <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                                            <a class="page-link" href="?page={{ current_page|add:"1" }}" aria-label=">>">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Empty State -->
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="fas fa-server fa-3x text-muted"></i>
+                            </div>
+                            <h5>No Server Configurations</h5>
+                            <p class="text-muted mb-4">Create your first server configuration to get started</p>
+                            <a href="{% url 'serverconfiguration_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create Configuration
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modals -->
+    {% for config in object_list %}
+    <div class="modal fade" id="deleteModal{{ config.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ config.pk }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel{{ config.pk }}">Delete Configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to delete "{{ config.name }}"? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'serverconfiguration_delete' config.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Configuration
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('configSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('table tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        document.getElementById('exportButton').addEventListener('click', function() {
+            const button = this;
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
+            button.disabled = true;
+
+            fetch('{% url "export_configurations" %}')
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'server_configurations.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Export failed:', error);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    alert('Export failed. Please try again.');
+                });
+        });
+
+        // Add filter functionality
+        const filterSelect = document.getElementById('filterSelect');
+        const tableRows = document.querySelectorAll('table tbody tr');
+
+        filterSelect.addEventListener('change', function(e) {
+            const rows = Array.from(tableRows);
+            const tbody = document.querySelector('tbody');
+            
+            switch(e.target.value) {
+                case 'recent':
+                    rows.sort((a, b) => {
+                        // Sort by ID in reverse order (assuming newer entries have higher IDs)
+                        return b.dataset.id - a.dataset.id;
+                    });
+                    break;
+                case 'oldest':
+                    rows.sort((a, b) => {
+                        // Sort by ID in ascending order
+                        return a.dataset.id - b.dataset.id;
+                    });
+                    break;
+                default:
+                    // Reset to original order
+                    rows.sort((a, b) => {
+                        return a.dataset.id - b.dataset.id;
+                    });
+            }
+            
+            // Clear and repopulate the table body
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        });
+
+        const markReadButtons = document.querySelectorAll('.mark-read-btn');
+        
+        markReadButtons.forEach(button => {
+            button.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const notificationId = this.dataset.notificationId;
+                const listItem = this.closest('.dropdown-item');
+                
+                try {
+                    const response = await fetch(`/notifications/${notificationId}/mark-read/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Your existing notification handling code
+                        handleNotificationUpdate(listItem);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+
+        function handleNotificationUpdate(listItem) {
+            if (listItem) {
+                listItem.remove();
+                
+                // Update the badge count
+                const badge = document.querySelector('.badge.bg-danger.notification-badge');
+                if (badge) {
+                    const currentCount = parseInt(badge.textContent);
+                    if (currentCount <= 1) {
+                        badge.remove();
+                        
+                        // Update dropdown content to show "No new notifications"
+                        const dropdownMenu = document.querySelector('.dropdown-menu[aria-labelledby="notificationsDropdown"]');
+                        if (dropdownMenu) {
+                            dropdownMenu.innerHTML = `
+                                <div class="p-2 border-bottom">
+                                    <h6 class="mb-0">Notifications</h6>
+                                </div>
+                                <div class="p-3 text-center text-muted">
+                                    <p class="mb-0">No new notifications</p>
+                                </div>`;
+                        }
+                    } else {
+                        badge.textContent = currentCount - 1;
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+{% block extra_css %}
+<style>
+    .search-box .form-control {
+        padding-right: 2.5rem;
+    }
+    
+    .table th {
+        background-color: #f9fafb;
+    }
+    
+    .pagination .page-link {
+        padding: 0.375rem 0.75rem;
+        color: var(--primary-color);
+        border-color: #e5e7eb;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .pagination .page-link:hover {
+        background-color: #f3f4f6;
+        border-color: #e5e7eb;
+        color: var(--primary-color);
+    }
+
+    .action-card {
+        background: linear-gradient(to right, var(--primary-color), #4338ca);
+        border: none;
+    }
+
+    .action-card h5,
+    .action-card p {
+        color: white;
+    }
+
+    /* Updated Pagination Styles */
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .pagination .page-item {
+        margin: 0;
+    }
+
+    .pagination .page-link {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background-color: #f8fafc;
+        transition: all 0.2s ease;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+        font-weight: 500;
+    }
+
+    .pagination .page-item:not(.active) .page-link:hover {
+        background-color: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #1e293b;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+        color: #cbd5e1;
+        pointer-events: none;
+    }
+
+    /* Entry count text style */
+    .text-muted {
+        color: #64748b !important;
+        font-size: 0.875rem;
+        font-weight: 400;
+    }
+</style>
+{% endblock %}
+
+{% endblock %} 

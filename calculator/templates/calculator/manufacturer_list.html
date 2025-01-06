@@ -1,0 +1,110 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+    <!-- Header Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card action-card">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Manage Manufacturers</h5>
+                        <p class="mb-0 text-white-50">Create and manage hardware manufacturers</p>
+                    </div>
+                    <a href="{% url 'manufacturer_create' %}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>New Manufacturer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manufacturers List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Website</th>
+                                    <th>Contact Email</th>
+                                    <th>Description</th>
+                                    <th style="width: 100px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for manufacturer in manufacturers %}
+                                <tr>
+                                    <td>{{ manufacturer.name }}</td>
+                                    <td>
+                                        {% if manufacturer.website %}
+                                        <a href="{{ manufacturer.website }}" target="_blank" class="text-decoration-none">
+                                            {{ manufacturer.website }}
+                                            <i class="fas fa-external-link-alt ms-1 small"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ manufacturer.contact_email }}</td>
+                                    <td>{{ manufacturer.description|truncatechars:50 }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'manufacturer_edit' manufacturer.pk %}" class="btn btn-sm btn-light" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-light" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteModal{{ manufacturer.pk }}">
+                                                <i class="fas fa-trash text-danger"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modals -->
+    {% for manufacturer in manufacturers %}
+    <div class="modal fade" id="deleteModal{{ manufacturer.pk }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Manufacturer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to delete "{{ manufacturer.name }}"? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{% url 'manufacturer_delete' manufacturer.pk %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Manufacturer
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .action-card {
+        background: linear-gradient(to right, var(--primary-color), #4338ca);
+        border: none;
+    }
+
+    .action-card h5,
+    .action-card p {
+        color: white;
+    }
+</style>
+{% endblock %} 

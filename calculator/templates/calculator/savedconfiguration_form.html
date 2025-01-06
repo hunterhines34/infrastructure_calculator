@@ -1,0 +1,258 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'savedconfiguration_list' %}" class="text-decoration-none">
+                    <i class="fas fa-save me-1"></i>Saved Configurations
+                </a>
+            </li>
+            <li class="breadcrumb-item active">
+                {% if object %}Edit Configuration{% else %}New Configuration{% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Basic Details Section -->
+                <div class="mb-5">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        Basic Details
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label for="id_name" class="form-label">Configuration Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-save text-muted"></i>
+                                </span>
+                                <input type="text" name="name" id="id_name" 
+                                       class="form-control border-start-0 ps-0{% if form.name.errors %} is-invalid{% endif %}"
+                                       value="{{ form.name.value|default:'' }}"
+                                       placeholder="Enter configuration name">
+                            </div>
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label for="id_description" class="form-label">Description</label>
+                            <textarea class="form-control{% if form.description.errors %} is-invalid{% endif %}"
+                                    id="id_description"
+                                    name="description"
+                                    rows="3"
+                                    placeholder="Describe this configuration">{{ form.description.value|default:'' }}</textarea>
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hardware Configuration -->
+                <div class="mb-5">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <i class="fas fa-microchip me-2 text-primary"></i>
+                        Hardware Configuration
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label for="id_cpu" class="form-label">CPU</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-microchip text-muted"></i>
+                                </span>
+                                <select name="cpu" id="id_cpu" 
+                                        class="form-select border-start-0 ps-0{% if form.cpu.errors %} is-invalid{% endif %}">
+                                    <option value="">Select CPU</option>
+                                    {% for choice in form.cpu.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.cpu.value|stringformat:"s" == choice.0|stringformat:"s" %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.cpu.errors %}
+                            <div class="invalid-feedback d-block">{{ form.cpu.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_ram" class="form-label">RAM</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-memory text-muted"></i>
+                                </span>
+                                <select name="ram" id="id_ram" 
+                                        class="form-select border-start-0 ps-0{% if form.ram.errors %} is-invalid{% endif %}">
+                                    <option value="">Select RAM</option>
+                                    {% for choice in form.ram.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.ram.value|stringformat:"s" == choice.0|stringformat:"s" %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.ram.errors %}
+                            <div class="invalid-feedback d-block">{{ form.ram.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_storage" class="form-label">Storage</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-hdd text-muted"></i>
+                                </span>
+                                <select name="storage" id="id_storage" 
+                                        class="form-select border-start-0 ps-0{% if form.storage.errors %} is-invalid{% endif %}">
+                                    <option value="">Select Storage</option>
+                                    {% for choice in form.storage.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.storage.value|stringformat:"s" == choice.0|stringformat:"s" %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.storage.errors %}
+                            <div class="invalid-feedback d-block">{{ form.storage.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_gpu" class="form-label">GPU</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-tv text-muted"></i>
+                                </span>
+                                <select name="gpu" id="id_gpu" 
+                                        class="form-select border-start-0 ps-0{% if form.gpu.errors %} is-invalid{% endif %}">
+                                    <option value="">Select GPU</option>
+                                    {% for choice in form.gpu.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.gpu.value|stringformat:"s" == choice.0|stringformat:"s" %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.gpu.errors %}
+                            <div class="invalid-feedback d-block">{{ form.gpu.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_network_card" class="form-label">Network Card</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-network-wired text-muted"></i>
+                                </span>
+                                <select name="network_card" id="id_network_card" 
+                                        class="form-select border-start-0 ps-0{% if form.network_card.errors %} is-invalid{% endif %}">
+                                    <option value="">Select Network Card</option>
+                                    {% for choice in form.network_card.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.network_card.value|stringformat:"s" == choice.0|stringformat:"s" %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.network_card.errors %}
+                            <div class="invalid-feedback d-block">{{ form.network_card.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_os" class="form-label">Operating System</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-desktop text-muted"></i>
+                                </span>
+                                <input type="text" name="os" id="id_os" 
+                                       class="form-control border-start-0 ps-0{% if form.os.errors %} is-invalid{% endif %}"
+                                       value="{{ form.os.value|default:'' }}"
+                                       placeholder="Enter OS details">
+                            </div>
+                            {% if form.os.errors %}
+                            <div class="invalid-feedback d-block">{{ form.os.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="mb-5">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <i class="fas fa-clipboard me-2 text-primary"></i>
+                        Additional Information
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <label for="id_notes" class="form-label">Notes</label>
+                            <textarea class="form-control{% if form.notes.errors %} is-invalid{% endif %}"
+                                    id="id_notes"
+                                    name="notes"
+                                    rows="4"
+                                    placeholder="Add any additional notes">{{ form.notes.value|default:'' }}</textarea>
+                            {% if form.notes.errors %}
+                            <div class="invalid-feedback d-block">{{ form.notes.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end align-items-center mt-4 pt-3 border-top">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'savedconfiguration_list' %}" class="btn btn-light px-4">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        {% if object %}
+                        <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-2"></i>
+                            {% if object %}Save Changes{% else %}Save Configuration{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Remove any container-fluid custom styling */
+    .container-fluid {
+        max-width: 100%;
+    }
+
+    /* Ensure proper header height and content spacing */
+    .dashboard-header {
+        height: var(--header-height) !important;
+        min-height: var(--header-height) !important;
+    }
+
+    .main-content {
+        margin-top: var(--header-height) !important;
+    }
+
+    /* Rest of your existing form styles... */
+</style>
+{% endblock %}

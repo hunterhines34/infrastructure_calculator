@@ -1,0 +1,188 @@
+{% extends 'calculator/base.html' %}
+{% load calculator_extras %}
+{% load humanize %}
+
+{% block title %}Approvals Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Approvals Dashboard</h1>
+    </div>
+
+    <!-- Projects requiring approval -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Projects Pending Approval</h5>
+            <span class="badge bg-primary">{{ projects|length }} Pending</span>
+        </div>
+        <div class="card-body p-0">
+            {% if projects %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%">Project Details</th>
+                            <th style="width: 15%">Submitted By</th>
+                            <th style="width: 15%">Timeline</th>
+                            <th style="width: 25%">Infrastructure Summary</th>
+                            <th style="width: 15%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold mb-1">{{ project.name }}</span>
+                                    <small class="text-muted">{{ project.description|truncatechars:100 }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span>{{ project.created_by.get_full_name|default:project.created_by.username }}</span>
+                                    <small class="text-muted">{{ project.created_by.email }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span>Submitted {{ project.created_at|date:"M d, Y" }}</span>
+                                    <small class="text-muted">{{ project.created_at|timesince }} ago</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <div class="mb-1">
+                                        {% with configs=project.server_configurations.all %}
+                                            {% if configs %}
+                                                <span class="badge bg-info">{{ configs.count }} Server{{ configs.count|pluralize }}</span>
+                                                <span class="badge bg-secondary">{{ configs|sum_cores }} Core{{ configs|sum_cores|pluralize }}</span>
+                                                <span class="badge bg-secondary">{{ configs|sum_ram }} GB RAM</span>
+                                                <span class="badge bg-secondary">{{ configs|sum_storage }} Storage</span>
+                                                {% with gpu_info=configs|sum_gpu_memory %}
+                                                    {% if gpu_info %}
+                                                        <span class="badge bg-secondary">{{ gpu_info }}</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% else %}
+                                                <span class="badge bg-info">No Servers</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    <small class="text-muted">
+                                        Est. Cost: ${{ project.calculate_total_cost|floatformat:2|intcomma }}
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'project_detail' pk=project.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-success" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#approveModal{{ project.pk }}"
+                                            title="Approve">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#rejectModal{{ project.pk }}"
+                                            title="Reject">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-warning" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#draftModal{{ project.pk }}"
+                                            title="Return to Draft">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Approve Modal -->
+                                <div class="modal fade" id="approveModal{{ project.pk }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Approve Project</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to approve "{{ project.name }}"?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form method="post" action="{% url 'project_approve' pk=project.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-success">Approve Project</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Reject Modal -->
+                                <div class="modal fade" id="rejectModal{{ project.pk }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Reject Project</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to reject "{{ project.name }}"?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form method="post" action="{% url 'project_reject' pk=project.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Reject Project</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Return to Draft Modal -->
+                                <div class="modal fade" id="draftModal{{ project.pk }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Return to Draft</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to return "{{ project.name }}" to draft status?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form method="post" action="{% url 'project_revert_to_draft' pk=project.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-warning">Return to Draft</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center p-5">
+                <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Projects Pending Approval</h5>
+                <p class="text-muted mb-0">All projects have been reviewed</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

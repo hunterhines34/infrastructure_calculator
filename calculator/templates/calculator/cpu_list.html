@@ -1,0 +1,132 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+    <!-- Header Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card action-card">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Manage CPUs</h5>
+                        <p class="mb-0 text-white-50">Create and manage your CPU components</p>
+                    </div>
+                    <a href="{% url 'cpu_create' %}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>New CPU
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CPUs List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Model</th>
+                                    <th>Manufacturer</th>
+                                    <th>Architecture</th>
+                                    <th>Cores/Threads</th>
+                                    <th>Clock Speed</th>
+                                    <th>Power</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cpu in cpus %}
+                                <tr>
+                                    <td>{{ cpu.name }}</td>
+                                    <td>{{ cpu.model }}</td>
+                                    <td>{{ cpu.manufacturer.name }}</td>
+                                    <td>{{ cpu.architecture }}</td>
+                                    <td>{{ cpu.cores }}/{{ cpu.threads }}</td>
+                                    <td>{{ cpu.clock_speed }} GHz</td>
+                                    <td>{{ cpu.power_consumption_watts }}W</td>
+                                    <td class="text-end">
+                                        <a href="{% url 'cpu_edit' cpu.id %}" class="btn btn-sm btn-light me-2">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCPUModal{{ cpu.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modals -->
+    {% for cpu in cpus %}
+    <div class="modal fade" id="deleteCPUModal{{ cpu.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete CPU</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete "{{ cpu.name }}"? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{% url 'cpu_delete' cpu.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete CPU
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-box .form-control {
+        padding-right: 2.5rem;
+    }
+    
+    .table th {
+        background-color: #f9fafb;
+    }
+    
+    .pagination .page-link {
+        padding: 0.375rem 0.75rem;
+        color: var(--primary-color);
+        border-color: #e5e7eb;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .pagination .page-link:hover {
+        background-color: #f3f4f6;
+        border-color: #e5e7eb;
+        color: var(--primary-color);
+    }
+
+    .action-card {
+        background: linear-gradient(to right, var(--primary-color), #4338ca);
+        border: none;
+    }
+
+    .action-card h5,
+    .action-card p {
+        color: white;
+    }
+</style>
+{% endblock %} 

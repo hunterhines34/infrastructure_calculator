@@ -1,0 +1,715 @@
+{% extends 'calculator/base.html' %}
+{% load calculator_extras %}
+{% load currency_tags %}
+
+{% block content %}
+    <!-- Header Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card action-card">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Manage Projects</h5>
+                        <p class="mb-0 text-white-50">Create and manage your server configuration projects</p>
+                    </div>
+                    <a href="{% url 'project_create' %}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>New Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0">Projects Overview</h5>
+                        <div class="d-flex gap-2">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control border-start-0 ps-0" 
+                                       id="mainProjectSearch" placeholder="Search projects...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Project Status Tabs -->
+                    <div class="project-tabs-wrapper mb-4">
+                        <div class="tabs-container">
+                            <nav class="project-tabs" role="tablist">
+                                <!-- Draft Tab -->
+                                <button class="tab-item active" id="draft-tab" data-bs-toggle="tab" data-bs-target="#draft" role="tab">
+                                    <div class="tab-content">
+                                        <div class="tab-icon">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </div>
+                                        <div class="tab-info">
+                                            <span class="tab-label">Draft</span>
+                                            <span class="tab-count">{{ draft_projects_count }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="tab-indicator"></div>
+                                </button>
+
+                                <!-- Pending Tab -->
+                                <button class="tab-item" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" role="tab">
+                                    <div class="tab-content">
+                                        <div class="tab-icon">
+                                            <i class="fas fa-clock"></i>
+                                        </div>
+                                        <div class="tab-info">
+                                            <span class="tab-label">Pending</span>
+                                            <span class="tab-count">{{ pending_projects_count }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="tab-indicator"></div>
+                                </button>
+
+                                <!-- Active Tab -->
+                                <button class="tab-item" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" role="tab">
+                                    <div class="tab-content">
+                                        <div class="tab-icon">
+                                            <i class="fas fa-play"></i>
+                                        </div>
+                                        <div class="tab-info">
+                                            <span class="tab-label">Active</span>
+                                            <span class="tab-count">{{ active_projects_count }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="tab-indicator"></div>
+                                </button>
+
+                                <!-- Completed Tab -->
+                                <button class="tab-item" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" role="tab">
+                                    <div class="tab-content">
+                                        <div class="tab-icon">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                        <div class="tab-info">
+                                            <span class="tab-label">Completed</span>
+                                            <span class="tab-count">{{ completed_projects_count }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="tab-indicator"></div>
+                                </button>
+
+                                <!-- Cancelled Tab (formerly Rejected) -->
+                                <button class="tab-item" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" role="tab">
+                                    <div class="tab-content">
+                                        <div class="tab-icon">
+                                            <i class="fas fa-ban"></i>
+                                        </div>
+                                        <div class="tab-info">
+                                            <span class="tab-label">Cancelled</span>
+                                            <span class="tab-count">{{ cancelled_projects_count }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="tab-indicator"></div>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="projectTabContent">
+                        {% for status, projects_list in project_tabs.items %}
+                        <div class="tab-pane fade {% if status == 'draft' %}show active{% endif %}" 
+                             id="{{ status }}" role="tabpanel">
+                            <!-- Search and Filter -->
+                            <div class="d-flex justify-content-between align-items-center mb-4 w-100">
+                                <div class="d-flex gap-3 align-items-center">
+                                    <div class="search-box">
+                                        <div class="position-relative">
+                                            <input type="text" 
+                                                   class="form-control pe-5 project-search" 
+                                                   data-status="{{ status }}"
+                                                   placeholder="Search projects...">
+                                            <i class="fas fa-search position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                                        </div>
+                                    </div>
+                                    <select class="form-select" style="width: auto;">
+                                        <option value="">All Projects</option>
+                                        <option value="recent">Recently Updated</option>
+                                        <option value="oldest">Oldest First</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-light export-button" data-status="{{ status }}">
+                                        <i class="fas fa-download me-2"></i>Export
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Your existing table content here -->
+                            {% if projects_list %}
+                                <div class="table-responsive w-100">
+                                    <table class="table table-hover align-middle w-100">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;"></th>
+                                                <th>Project Name</th>
+                                                <th>Description</th>
+                                                <th>Created By</th>
+                                                <th>Created</th>
+                                                <th>Last Updated</th>
+                                                <th>Total Cost</th>
+                                                <th style="width: 100px;">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for project in projects_list %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10" style="width: 32px; height: 32px;">
+                                                        <i class="fas fa-folder text-primary"></i>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-medium">{{ project.name }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="text-muted text-truncate" style="max-width: 300px;">
+                                                        {{ project.description|default:"No description provided" }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                                                            <i class="fas fa-user-circle text-secondary"></i>
+                                                        </div>
+                                                        <span class="ms-2">{{ project.created_by|default:"System" }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="text-muted">{{ project.created_at|date:"M d, Y" }}</div>
+                                                    <div class="small text-muted">{{ project.created_at|time:"g:i A" }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="text-muted">{{ project.updated_at|date:"M d, Y" }}</div>
+                                                    <div class="small text-muted">{{ project.updated_at|time:"g:i A" }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-medium">{{ project.calculate_total_cost|currency }}</div>
+                                                </td>
+                                                <td style="width: 100px;">
+                                                    <div class="d-flex gap-2">
+                                                        <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-light" title="View Details">
+                                                            <i class="fas fa-eye text-primary"></i>
+                                                        </a>
+                                                        <a href="{% url 'project_edit' project.id %}" class="btn btn-sm btn-light" title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-sm btn-light" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteModal{{ project.id }}">
+                                                            <i class="fas fa-trash text-danger"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                {% if projects_list|length > 0 %}
+                                    <div class="d-flex justify-content-between align-items-center mt-4">
+                                        <div class="text-muted">
+                                            Showing {{ page_start|add:"1" }} to {{ page_end }} of {{ projects_list|length }} entries
+                                        </div>
+                                        <nav aria-label="Project navigation">
+                                            <ul class="pagination mb-0">
+                                                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                                                    <a class="page-link" href="?page={{ current_page|add:"-1" }}&status={{ status }}" aria-label="Previous">
+                                                        <span aria-hidden="true">&laquo;</span>
+                                                    </a>
+                                                </li>
+                                                {% for page_num in page_range %}
+                                                    <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                                                        <a class="page-link" href="?page={{ page_num }}&status={{ status }}">{{ page_num }}</a>
+                                                    </li>
+                                                {% endfor %}
+                                                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                                                    <a class="page-link" href="?page={{ current_page|add:"1" }}&status={{ status }}" aria-label="Next">
+                                                        <span aria-hidden="true">&raquo;</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <div class="mb-4">
+                                        <i class="fas fa-folder-open fa-3x text-muted"></i>
+                                    </div>
+                                    <h5>No {{ status|title }} Projects</h5>
+                                    <p class="text-muted mb-4">Create your first project to get started</p>
+                                    <a href="{% url 'project_create' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>Create Project
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modals -->
+    {% for project in projects %}
+    <div class="modal fade" id="deleteModal{{ project.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ project.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel{{ project.id }}">Delete Project</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to delete "{{ project.name }}"? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'project_delete' project.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Project
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+    document.getElementById('exportButton').addEventListener('click', function() {
+        // Get table data
+        const table = document.querySelector('table');
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        
+        // Convert table data to CSV
+        const csvData = rows.map(row => {
+            const name = row.querySelector('td:nth-child(2)').textContent.trim();
+            const description = row.querySelector('td:nth-child(3)').textContent.trim();
+            const createdBy = row.querySelector('td:nth-child(4)').textContent.trim();
+            const created = row.querySelector('td:nth-child(5)').textContent.trim();
+            const updated = row.querySelector('td:nth-child(6)').textContent.trim();
+            
+            return [name, description, createdBy, created, updated].map(field => 
+                `"${field.replace(/"/g, '""')}"`
+            ).join(',');
+        });
+        
+        // Add header row
+        csvData.unshift('"Project Name","Description","Created By","Created","Last Updated"');
+        
+        // Create and trigger download
+        const csvContent = csvData.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().split('T')[0];
+        
+        link.href = window.URL.createObjectURL(blob);
+        link.setAttribute('download', `projects_${timestamp}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab-specific search
+        const searchInputs = document.querySelectorAll('.project-search');
+        searchInputs.forEach(searchInput => {
+            searchInput.addEventListener('input', function(e) {
+                filterProjects(e.target.value, e.target.dataset.status);
+            });
+        });
+
+        // Export functionality for each tab
+        document.querySelectorAll('.export-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const status = this.dataset.status;
+                const table = document.querySelector(`#${status} table`);
+                if (!table) return;
+
+                const rows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])')); // Only visible rows
+                
+                // Convert table data to CSV
+                const csvData = rows.map(row => {
+                    const name = row.querySelector('td:nth-child(2)').textContent.trim();
+                    const description = row.querySelector('td:nth-child(3)').textContent.trim();
+                    const createdBy = row.querySelector('td:nth-child(4)').textContent.trim();
+                    const created = row.querySelector('td:nth-child(5)').textContent.trim();
+                    const updated = row.querySelector('td:nth-child(6)').textContent.trim();
+                    
+                    return [name, description, createdBy, created, updated].map(field => 
+                        `"${field.replace(/"/g, '""')}"`
+                    ).join(',');
+                });
+                
+                // Add header row
+                csvData.unshift('"Project Name","Description","Created By","Created","Last Updated"');
+                
+                // Create and trigger download
+                const csvContent = csvData.join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const timestamp = new Date().toISOString().split('T')[0];
+                
+                link.href = window.URL.createObjectURL(blob);
+                link.setAttribute('download', `${status}_projects_${timestamp}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+
+        // Filter functionality
+        document.querySelectorAll('.form-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const tabPane = this.closest('.tab-pane');
+                const status = tabPane.id;
+                const tableBody = tabPane.querySelector('table tbody');
+                const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+                switch(this.value) {
+                    case 'recent':
+                        rows.sort((a, b) => {
+                            const dateA = new Date(a.querySelector('td:nth-child(6)').querySelector('.text-muted').textContent + ' ' + 
+                                                a.querySelector('td:nth-child(6)').querySelector('.small').textContent);
+                            const dateB = new Date(b.querySelector('td:nth-child(6)').querySelector('.text-muted').textContent + ' ' + 
+                                                b.querySelector('td:nth-child(6)').querySelector('.small').textContent);
+                            return dateB - dateA;
+                        });
+                        break;
+                    case 'oldest':
+                        rows.sort((a, b) => {
+                            const dateA = new Date(a.querySelector('td:nth-child(5)').querySelector('.text-muted').textContent + ' ' + 
+                                                a.querySelector('td:nth-child(5)').querySelector('.small').textContent);
+                            const dateB = new Date(b.querySelector('td:nth-child(5)').querySelector('.text-muted').textContent + ' ' + 
+                                                b.querySelector('td:nth-child(5)').querySelector('.small').textContent);
+                            return dateA - dateB;
+                        });
+                        break;
+                    default:
+                        // Default sorting (by name)
+                        rows.sort((a, b) => {
+                            const nameA = a.querySelector('td:nth-child(2)').querySelector('.fw-medium').textContent;
+                            const nameB = b.querySelector('td:nth-child(2)').querySelector('.fw-medium').textContent;
+                            return nameA.localeCompare(nameB);
+                        });
+                }
+
+                // Clear the table and re-append sorted rows
+                rows.forEach(row => tableBody.appendChild(row));
+            });
+        });
+
+        function filterProjects(searchTerm, status) {
+            searchTerm = searchTerm.toLowerCase();
+            const tableBody = document.querySelector(`#${status} table tbody`);
+            
+            if (!tableBody) return false;
+            
+            const rows = tableBody.getElementsByTagName('tr');
+            let matchCount = 0;
+            
+            for (let row of rows) {
+                try {
+                    const projectName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const projectDescription = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                    const createdBy = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                    
+                    const matchesSearch = projectName.includes(searchTerm) || 
+                                      projectDescription.includes(searchTerm) || 
+                                      createdBy.includes(searchTerm);
+                    
+                    row.style.display = matchesSearch ? '' : 'none';
+                    if (matchesSearch) matchCount++;
+                } catch (error) {
+                    continue;
+                }
+            }
+            
+            // Show/hide empty state
+            const emptyState = document.querySelector(`#${status} .text-center.py-5`);
+            const tableContainer = document.querySelector(`#${status} .table-responsive`);
+            
+            if (matchCount === 0) {
+                if (tableContainer) tableContainer.style.display = 'none';
+                if (emptyState) {
+                    emptyState.style.display = 'block';
+                    const emptyStateTitle = emptyState.querySelector('h5');
+                    if (emptyStateTitle) {
+                        emptyStateTitle.textContent = `No ${status} projects found matching "${searchTerm}"`;
+                    }
+                }
+            } else {
+                if (tableContainer) tableContainer.style.display = 'block';
+                if (emptyState) emptyState.style.display = 'none';
+            }
+
+            return matchCount > 0;
+        }
+    });
+    </script>
+{% endblock %}
+{% block extra_css %}
+<style>
+    /* Base tab styles */
+    .project-tabs-wrapper {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .tabs-container {
+        padding: 0.25rem;
+    }
+
+    .project-tabs {
+        display: flex;
+        gap: 0.25rem;
+        position: relative;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .project-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab-item {
+        flex: 1;
+        min-width: 120px;
+        padding: 0.5rem 0.75rem;
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+
+    .tab-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tab-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 0.875rem;
+    }
+
+    .tab-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tab-label {
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: #64748b;
+        transition: color 0.2s ease;
+    }
+
+    .tab-count {
+        font-size: 0.75rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #64748b;
+        transition: all 0.2s ease;
+    }
+
+    /* Active States */
+    .tab-item:hover {
+        background: #f8fafc;
+    }
+
+    .tab-item.active {
+        background: #f1f5f9;
+    }
+
+    .tab-item.active .tab-label {
+        color: #0f172a;
+    }
+
+    /* Status-specific styling */
+    #active-tab .tab-icon {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+
+    #active-tab.active .tab-count {
+        background: #22c55e;
+        color: white;
+    }
+
+    #pending-tab .tab-icon {
+        background: rgba(249, 115, 22, 0.1);
+        color: #f97316;
+    }
+
+    #pending-tab.active .tab-count {
+        background: #f97316;
+        color: white;
+    }
+
+    #draft-tab .tab-icon {
+        background: rgba(71, 85, 105, 0.1);
+        color: #475569;
+    }
+
+    #draft-tab.active .tab-count {
+        background: #475569;
+        color: white;
+    }
+
+    #completed-tab .tab-icon {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+    }
+
+    #completed-tab.active .tab-count {
+        background: #3b82f6;
+        color: white;
+    }
+
+    #cancelled-tab .tab-icon {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    #cancelled-tab.active .tab-count {
+        background: #ef4444;
+        color: white;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .tab-item {
+            min-width: 100px;
+            padding: 0.375rem 0.5rem;
+        }
+
+        .tab-icon {
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+        }
+
+        .tab-label {
+            font-size: 0.75rem;
+        }
+
+        .tab-count {
+            font-size: 0.675rem;
+            padding: 0.125rem 0.375rem;
+        }
+    }
+
+    /* Full width styles */
+    .tab-content {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .tab-pane {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    /* Keep existing table styles */
+    .table th {
+        background-color: #f9fafb;
+    }
+    
+    .pagination .page-link {
+        padding: 0.375rem 0.75rem;
+        color: var(--primary-color);
+        border-color: #e5e7eb;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .pagination .page-link:hover {
+        background-color: #f3f4f6;
+        border-color: #e5e7eb;
+        color: var(--primary-color);
+    }
+
+    /* Updated Pagination Styles */
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .pagination .page-item {
+        margin: 0;
+    }
+
+    .pagination .page-link {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background-color: #f8fafc;
+        transition: all 0.2s ease;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        
+        color: white;
+        font-weight: 500;
+    }
+
+    .pagination .page-item:not(.active) .page-link:hover {
+        background-color: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #1e293b;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+        color: #cbd5e1;
+        pointer-events: none;
+    }
+
+    /* Entry count text style */
+    .text-muted {
+        color: #64748b !important;
+        font-size: 0.875rem;
+        font-weight: 400;
+    }
+</style>
+{% endblock %}

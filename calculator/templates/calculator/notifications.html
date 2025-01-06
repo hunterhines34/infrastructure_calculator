@@ -1,0 +1,194 @@
+{% extends 'calculator/base.html' %}
+{% load static %}
+
+{% block title %}Notifications{% endblock %}
+{% block header_title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Notifications</h5>
+                    {% if notifications %}
+                    <button class="btn btn-outline-primary btn-sm" id="markAllRead">
+                        <i class="fas fa-check-double me-1"></i>Mark All as Read
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if notifications %}
+                        <div class="list-group list-group-flush">
+                            {% for notification in page_obj %}
+                                <div class="list-group-item {% if not notification.is_read %}bg-light{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="mb-1">{{ notification.title }}</h6>
+                                            <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                                        </div>
+                                        {% if not notification.is_read %}
+                                            <span class="badge bg-primary">New</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-2">{{ notification.message }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{{ notification.related_link }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-external-link-alt me-1"></i>View Details
+                                        </a>
+                                        {% if not notification.is_read %}
+                                        <button class="btn btn-sm btn-light mark-read-btn" data-notification-id="{{ notification.id }}">
+                                            <i class="fas fa-check me-1"></i>Mark as Read
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if page_obj.has_other_pages %}
+                        <div class="p-3 border-top">
+                            <nav aria-label="Notification pagination">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                    {% endif %}
+
+                                    {% for num in page_obj.paginator.page_range %}
+                                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                    {% endfor %}
+
+                                    {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center p-4">
+                            <i class="fas fa-bell-slash fa-2x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No notifications found</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark all as read functionality
+    const markAllReadBtn = document.getElementById('markAllRead');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', async function() {
+            try {
+                const response = await fetch('{% url "mark_all_notifications_read" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    // Remove all notification items from the page
+                    document.querySelectorAll('.list-group-item').forEach(item => item.remove());
+                    
+                    // Hide the "Mark All as Read" button
+                    markAllReadBtn.style.display = 'none';
+
+                    // Show the "No notifications" message
+                    const listGroup = document.querySelector('.list-group');
+                    listGroup.innerHTML = `
+                        <div class="text-center p-4">
+                            <i class="fas fa-bell-slash fa-2x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No notifications found</p>
+                        </div>`;
+
+                    // Update navbar notifications
+                    const navbarBadge = document.querySelector('.position-absolute.badge.rounded-pill.bg-danger');
+                    if (navbarBadge) {
+                        navbarBadge.remove();
+                    }
+
+                    // Update navbar dropdown menu
+                    const dropdownMenu = document.querySelector('.dropdown-menu[aria-labelledby="notificationDropdown"]');
+                    if (dropdownMenu) {
+                        dropdownMenu.innerHTML = `
+                            <div class="p-2 border-bottom">
+                                <h6 class="mb-0">Notifications</h6>
+                            </div>
+                            <div class="p-3 text-center text-muted">
+                                <p class="mb-0">No new notifications</p>
+                            </div>`;
+                    }
+
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'alert alert-success position-fixed end-0 m-3';
+                    toast.style.zIndex = '9999';
+                    toast.style.top = '80px';
+                    toast.innerHTML = 'All notifications marked as read';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    }
+
+    // Individual mark as read functionality
+    document.querySelectorAll('.mark-read-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const notificationId = this.dataset.notificationId;
+            const listItem = this.closest('.list-group-item');
+            
+            try {
+                const response = await fetch(`/notifications/${notificationId}/mark-read/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    // Remove the notification item
+                    listItem.remove();
+
+                    // Check if there are any notifications left
+                    const remainingNotifications = document.querySelectorAll('.list-group-item');
+                    if (remainingNotifications.length === 0) {
+                        // Hide the "Mark All as Read" button
+                        if (markAllReadBtn) markAllReadBtn.style.display = 'none';
+                        
+                        // Show the "No notifications" message
+                        const listGroup = document.querySelector('.list-group');
+                        listGroup.innerHTML = `
+                            <div class="text-center p-4">
+                                <i class="fas fa-bell-slash fa-2x text-muted mb-3"></i>
+                                <p class="text-muted mb-0">No notifications found</p>
+                            </div>`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

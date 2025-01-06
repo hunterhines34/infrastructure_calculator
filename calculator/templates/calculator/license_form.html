@@ -1,0 +1,252 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'license_list' %}" class="text-decoration-none">
+                    <i class="fas fa-key me-1"></i>Licenses
+                </a>
+            </li>
+            <li class="breadcrumb-item active">
+                {% if object %}Edit License{% else %}New License{% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Basic Details Section -->
+                <div class="mb-5">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        License Details
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <!-- Basic Info -->
+                        <div class="col-md-6">
+                            <label for="id_name" class="form-label">License Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-key text-muted"></i>
+                                </span>
+                                <input type="text" name="name" id="id_name" 
+                                       class="form-control border-start-0 ps-0{% if form.name.errors %} is-invalid{% endif %}"
+                                       value="{{ form.name.value|default:'' }}"
+                                       placeholder="e.g., SQL Server 2022"
+                                       required>
+                            </div>
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_manufacturer" class="form-label">Manufacturer</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-building text-muted"></i>
+                                </span>
+                                <select name="manufacturer" id="id_manufacturer" 
+                                        class="form-select border-start-0 ps-0{% if form.manufacturer.errors %} is-invalid{% endif %}"
+                                        required>
+                                    <option value="">Select manufacturer</option>
+                                    {% for choice in form.manufacturer.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.manufacturer.value|stringformat:"s" == choice.0|stringformat:"s" %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Version and Edition -->
+                        <div class="col-md-6">
+                            <label for="id_version" class="form-label">Version</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-code-branch text-muted"></i>
+                                </span>
+                                <input type="text" name="version" id="id_version" 
+                                       class="form-control border-start-0 ps-0"
+                                       value="{{ form.version.value|default:'' }}"
+                                       placeholder="e.g., 2022">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_edition" class="form-label">Edition</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-tag text-muted"></i>
+                                </span>
+                                <select name="edition" id="id_edition" 
+                                        class="form-select border-start-0 ps-0{% if form.edition.errors %} is-invalid{% endif %}"
+                                        required>
+                                    <option value="">Select edition</option>
+                                    {% for choice in form.edition.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.edition.value == choice.0 %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Licensing Type -->
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_core_based" id="id_is_core_based" 
+                                       class="form-check-input"
+                                       {% if form.is_core_based.value %}checked{% endif %}>
+                                <label class="form-check-label" for="id_is_core_based">Core-based License</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_socket_based" id="id_is_socket_based" 
+                                       class="form-check-input"
+                                       {% if form.is_socket_based.value %}checked{% endif %}>
+                                <label class="form-check-label" for="id_is_socket_based">Socket-based License</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_user_based" id="id_is_user_based" 
+                                       class="form-check-input"
+                                       {% if form.is_user_based.value %}checked{% endif %}>
+                                <label class="form-check-label" for="id_is_user_based">User-based License</label>
+                            </div>
+                        </div>
+
+                        <!-- Core Requirements -->
+                        <div class="col-md-4">
+                            <label for="id_min_cores_per_processor" class="form-label">Min Cores per Processor</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-microchip text-muted"></i>
+                                </span>
+                                <input type="number" name="min_cores_per_processor" id="id_min_cores_per_processor" 
+                                       class="form-control border-start-0 ps-0"
+                                       value="{{ form.min_cores_per_processor.value|default:0 }}"
+                                       min="0">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="id_min_cores_per_server" class="form-label">Min Cores per Server</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-server text-muted"></i>
+                                </span>
+                                <input type="number" name="min_cores_per_server" id="id_min_cores_per_server" 
+                                       class="form-control border-start-0 ps-0"
+                                       value="{{ form.min_cores_per_server.value|default:0 }}"
+                                       min="0">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="id_core_pack_size" class="form-label">Core Pack Size</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-box text-muted"></i>
+                                </span>
+                                <input type="number" name="core_pack_size" id="id_core_pack_size" 
+                                       class="form-control border-start-0 ps-0"
+                                       value="{{ form.core_pack_size.value|default:2 }}"
+                                       min="1">
+                            </div>
+                        </div>
+
+                        <!-- Additional Options -->
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="requires_cal" id="id_requires_cal" 
+                                       class="form-check-input"
+                                       {% if form.requires_cal.value %}checked{% endif %}>
+                                <label class="form-check-label" for="id_requires_cal">Requires Client Access License (CAL)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label for="id_notes" class="form-label">Notes</label>
+                            <textarea name="notes" id="id_notes" 
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Enter any additional notes about this license">{{ form.notes.value|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end align-items-center mt-5 pt-4 border-top">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'license_list' %}" class="btn btn-light px-4">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        {% if object %}
+                        <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-2"></i>
+                            {% if object %}Save Changes{% else %}Create License{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Remove any container-fluid custom styling */
+    .container-fluid {
+        max-width: 100%;
+    }
+
+    /* Ensure proper header height and content spacing */
+    .dashboard-header {
+        height: var(--header-height) !important;
+        min-height: var(--header-height) !important;
+    }
+
+    .main-content {
+        margin-top: var(--header-height) !important;
+    }
+
+    /* Rest of your existing form styles... */
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}

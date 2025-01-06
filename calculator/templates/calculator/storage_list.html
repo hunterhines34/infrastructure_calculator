@@ -1,0 +1,110 @@
+{% extends 'calculator/base.html' %}
+
+{% block title %}Storage{% endblock %}
+{% block header_title %}Storage{% endblock %}
+
+{% block content %}
+    <!-- Header Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card action-card">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">Manage Storage</h5>
+                        <p class="mb-0 text-white-50">Create and manage your storage components</p>
+                    </div>
+                    <a href="{% url 'storage_create' %}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>New Storage
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Model</th>
+                                    <th>Manufacturer</th>
+                                    <th>Capacity</th>
+                                    <th>Type</th>
+                                    <th>Interface</th>
+                                    <th>Form Factor</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for storage in storages %}
+                                <tr>
+                                    <td>{{ storage.name }}</td>
+                                    <td>{{ storage.model }}</td>
+                                    <td>{{ storage.manufacturer.name }}</td>
+                                    <td>{{ storage.capacity }} {{ storage.capacity_unit }}</td>
+                                    <td>{{ storage.storage_type }}</td>
+                                    <td>{{ storage.interface }}</td>
+                                    <td>{{ storage.form_factor }}</td>
+                                    <td class="text-end">
+                                        <a href="{% url 'storage_edit' storage.id %}" class="btn btn-sm btn-light me-2">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteStorageModal{{ storage.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modals -->
+    {% for storage in storages %}
+    <div class="modal fade" id="deleteStorageModal{{ storage.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Storage</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete "{{ storage.name }}"? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{% url 'storage_delete' storage.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Storage
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .action-card {
+        background: linear-gradient(to right, var(--primary-color), #4338ca);
+        border: none;
+    }
+
+    .action-card h5,
+    .action-card p {
+        color: white;
+    }
+</style>
+{% endblock %} 

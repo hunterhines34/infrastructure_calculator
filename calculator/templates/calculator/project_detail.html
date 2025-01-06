@@ -1,0 +1,560 @@
+{% extends 'calculator/base.html' %}
+{% load calculator_extras %}
+{% load currency_tags %}
+
+{% block title %}{{ project.name }} - Project Details{% endblock %}
+{% block header_title %}Project Details{% endblock %}
+
+{% block content %}
+    <!-- Project Header Section -->
+    <div class="card mb-4 rounded-3">
+        <div class="card-body p-4" style="background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); border-radius: 0.75rem;">
+            <!-- Project Title and Status -->
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h3 class="text-white mb-2">{{ project.name }}</h3>
+                    <p class="text-white-50 mb-3">{{ project.description }}</p>
+                    
+                    <!-- Project Details -->
+                    <div class="d-flex flex-wrap gap-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user text-white-50 me-2"></i>
+                            <span class="text-white-50">Created by: 
+                                <span class="text-white">{{ project.created_by|default:"System" }}</span>
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar text-white-50 me-2"></i>
+                            <span class="text-white-50">Created: 
+                                <span class="text-white">{{ project.created_at|date:"M d, Y" }}</span>
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-clock text-white-50 me-2"></i>
+                            <span class="text-white-50">Updated: 
+                                <span class="text-white">{{ project.updated_at|date:"M d, Y" }}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% with status=project.status %}
+                <span class="badge {% if status == 'draft' %}bg-secondary{% elif status == 'pending' %}bg-warning{% elif status == 'active' %}bg-success{% elif status == 'completed' %}bg-info{% else %}bg-danger{% endif %} bg-opacity-75 px-3 py-2 rounded-3">
+                    {{ project.get_status_display }}
+                </span>
+                {% endwith %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <!-- Primary Actions -->
+                {% if project.status == 'draft' %}
+                    <form method="post" action="{% url 'project_submit_review' project.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-paper-plane me-2"></i>Submit for Review
+                        </button>
+                    </form>
+                {% endif %}
+                
+                {% if project.status == 'pending' %}
+                    {% if user.is_staff %}
+                        <form method="post" action="{% url 'project_approve' project.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check me-2"></i>Approve
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'project_reject' project.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-times me-2"></i>Reject
+                            </button>
+                        </form>
+                    {% endif %}
+                    <form method="post" action="{% url 'project_revert_to_draft' project.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fas fa-undo me-2"></i>Revert to Draft
+                        </button>
+                    </form>
+                {% endif %}
+
+                <!-- Secondary Actions -->
+                <div class="ms-auto">
+                    {% if project.server_configurations.exists %}
+                    <a href="{% url 'project_export' project.id %}" class="btn btn-light me-2">
+                        <i class="fas fa-file-export me-2"></i>Export to CSV
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'project_edit' project.id %}" class="btn btn-light">
+                        <i class="fas fa-edit me-2"></i>Edit Project
+                    </a>
+                    <button type="button" class="btn btn-light ms-2" data-bs-toggle="modal" data-bs-target="#deleteProjectModal">
+                        <i class="fas fa-trash me-2"></i>Delete Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Overview -->
+    <div class="row g-4 mb-4">
+        <!-- Project Stats 
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-server fa-lg"></i>
+                        </div>
+                    </div>
+                    <h3 class="mb-1">{{ project.server_configurations.count }}</h3>
+                    <p class="text-muted mb-0">Server Configurations</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i class="fas fa-save fa-lg"></i>
+                        </div>
+                    </div>
+                    <h3 class="mb-1">{{ saved_configurations|length }}</h3>
+                    <p class="text-muted mb-0">Saved Configurations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    -->
+
+    <!-- Cost Summary Card -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-4">Cost Summary</h5>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-primary bg-opacity-10 text-primary me-3">
+                                    <i class="fas fa-server fa-lg"></i>
+                                </div>
+                                <div>
+                                    <p class="text-muted mb-0">Hardware Costs</p>
+                                    <h4 class="mb-0">{{ hardware_costs|currency }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-success bg-opacity-10 text-success me-3">
+                                    <i class="fas fa-key fa-lg"></i>
+                                </div>
+                                <div>
+                                    <p class="text-muted mb-0">License Costs</p>
+                                    <h4 class="mb-0">{{ license_costs|currency }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="stat-icon bg-info bg-opacity-10 text-info me-3">
+                                    <i class="fas fa-calculator fa-lg"></i>
+                                </div>
+                                <div>
+                                    <p class="text-muted mb-0">Total Cost</p>
+                                    <h4 class="mb-0">{{ total_cost|currency }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Configurations -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">Server Configurations</h5>
+                        {% if project.server_configurations.exists %}
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#loadConfigModal">
+                                <i class="fas fa-download me-2"></i>Load Saved Configuration
+                            </button>
+                            <a href="{% url 'serverconfiguration_create' %}?project={{ project.id }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>New Configuration
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if project.server_configurations.exists %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Configuration Name</th>
+                                        <th>CPU</th>
+                                        <th>RAM</th>
+                                        <th>Storage</th>
+                                        <th>Created</th>
+                                        <th>Cost</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for config in project.server_configurations.all %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-medium">{{ config.name }}</div>
+                                            <small class="text-muted">{{ config.description|truncatechars:50 }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-microchip text-primary me-2"></i>
+                                                {{ config.cpu.name }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-memory text-success me-2"></i>
+                                                {{ config.ram.capacity_gb }}GB
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-hdd text-info me-2"></i>
+                                                {{ config.storage.capacity }}TB
+                                            </div>
+                                        </td>
+                                        <td>{{ config.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-medium">{{ config.calculate_total_cost|currency }}</span>
+                                                <small class="text-muted">
+                                                    HW: {{ config.calculate_hardware_cost|currency }}
+                                                    <br>
+                                                    License: {{ config.calculate_license_costs|currency }}
+                                                </small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <a href="{% url 'serverconfiguration_detail' config.id %}" class="btn btn-sm btn-light">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'serverconfiguration_edit' config.id %}" class="btn btn-sm btn-light">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-light text-danger" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteConfigModal{{ config.id }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="fas fa-server fa-3x text-muted"></i>
+                            </div>
+                            <h6 class="text-muted">No Server Configurations</h6>
+                            <p class="text-muted mb-4">Start by creating a new configuration or loading a saved one</p>
+                            <div class="d-flex justify-content-center gap-2">
+                                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#loadConfigModal">
+                                    <i class="fas fa-download me-2"></i>Load Saved Configuration
+                                </button>
+                                <a href="{% url 'serverconfiguration_create' %}?project={{ project.id }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>Create Configuration
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Recent Activity</h5>
+                    <div class="timeline">
+                        {% for activity in project.activities.all|slice:":5" %}
+                            <div class="timeline-item">
+                                <div class="timeline-icon bg-primary bg-opacity-10">
+                                    <i class="fas fa-history text-primary"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0">{{ activity.title }}</h6>
+                                        <small class="text-muted">
+                                            {{ activity.created_at|date:"M d, Y g:i A" }}
+                                        </small>
+                                    </div>
+                                    <p class="text-muted mb-0">{{ activity.description }}</p>
+                                    <small class="text-muted">
+                                        by {{ activity.created_by.get_full_name|default:activity.created_by.username }}
+                                    </small>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted text-center mb-0">No recent activity</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Project Modal -->
+    <div class="modal fade" id="deleteProjectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Project</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h5>Are you sure?</h5>
+                        <p class="text-muted mb-0">This action will permanently delete "{{ project.name }}" and all associated configurations. This cannot be undone.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'project_delete' project.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Project
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Configuration Modal -->
+    <div class="modal fade" id="loadConfigModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Load Saved Configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% if saved_configurations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Configuration Name</th>
+                                        <th>CPU</th>
+                                        <th>RAM</th>
+                                        <th>Storage</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for config in saved_configurations %}
+                                    <tr>
+                                        <td>{{ config.name }}</td>
+                                        <td>{{ config.cpu.name }}</td>
+                                        <td>{{ config.ram.capacity_gb }}GB</td>
+                                        <td>{{ config.storage.capacity }}TB</td>
+                                        <td>{{ config.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <form method="post" action="{% url 'load_saved_configuration' project.id config.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-download me-1"></i>Load
+                                                    </button>
+                                                </form>
+                                                <button type="button" class="btn btn-sm btn-light text-danger" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteSavedConfigModal{{ config.id }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No saved configurations available</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Configuration Modal -->
+    {% for config in project.server_configurations.all %}
+    <div class="modal fade" id="deleteConfigModal{{ config.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h5>Are you sure?</h5>
+                        <p class="text-muted mb-0">This will permanently delete the configuration "{{ config.name }}". This cannot be undone.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'serverconfiguration_delete' config.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Configuration
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Delete Saved Configuration Modal -->
+    {% for config in saved_configurations %}
+    <div class="modal fade" id="deleteSavedConfigModal{{ config.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Saved Configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h5>Are you sure?</h5>
+                        <p class="text-muted mb-0">This will permanently delete the saved configuration "{{ config.name }}". This cannot be undone.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'savedconfiguration_delete' config.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Delete Configuration
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 3rem;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+        border-left: 2px solid #e5e7eb;
+        padding-left: 1.5rem;
+    }
+
+    .timeline-item:last-child {
+        border-left-color: transparent;
+        padding-bottom: 0;
+    }
+
+    .timeline-icon {
+        position: absolute;
+        left: -1rem;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #fff;
+        border: 2px solid #e5e7eb;
+    }
+
+    .stat-card {
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .stat-trend {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 1rem;
+    }
+
+    .stat-trend.positive {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #059669;
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+    
+    .btn {
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+    }
+    
+    .btn-light {
+        background-color: rgba(255, 255, 255, 0.9);
+        border: none;
+    }
+    
+    .btn-light:hover {
+        background-color: #ffffff;
+    }
+</style>
+{% endblock %} 

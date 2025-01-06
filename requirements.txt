@@ -1,0 +1,12 @@
+asgiref==3.8.1
+django==5.1.4
+iommi==7.8.0
+pip==22.0.2
+pyparsing==3.2.0
+setuptools==59.6.0
+sqlparse==0.5.3
+typing_extensions==4.12.0
+djangorestframework==3.14.0
+drf-spectacular==0.26.2
+drf-api-logger==1.1.8
+django-filter==23.2

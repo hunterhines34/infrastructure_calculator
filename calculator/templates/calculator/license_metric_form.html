@@ -1,0 +1,85 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'license_list' %}" class="text-decoration-none">
+                    <i class="fas fa-key me-1"></i>Licenses
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'license_metric_list' %}" class="text-decoration-none">
+                    <i class="fas fa-ruler me-1"></i>Metrics
+                </a>
+            </li>
+            <li class="breadcrumb-item active">
+                {% if object %}Edit Metric{% else %}New Metric{% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <div class="mb-5">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <i class="fas fa-ruler me-2 text-primary"></i>
+                        Metric Details
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label for="id_name" class="form-label">Metric Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-ruler text-muted"></i>
+                                </span>
+                                <input type="text" name="name" id="id_name" 
+                                       class="form-control border-start-0 ps-0{% if form.name.errors %} is-invalid{% endif %}"
+                                       value="{{ form.name.value|default:'' }}"
+                                       placeholder="e.g., Core Pack, User CAL"
+                                       required>
+                            </div>
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-12">
+                            <label for="id_description" class="form-label">Description</label>
+                            <textarea name="description" id="id_description" 
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Explain how this metric is used for licensing">{{ form.description.value|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end align-items-center mt-5 pt-4 border-top">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'license_metric_list' %}" class="btn btn-light px-4">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        {% if object %}
+                        <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-2"></i>
+                            {% if object %}Save Changes{% else %}Create Metric{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

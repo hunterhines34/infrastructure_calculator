@@ -1,0 +1,228 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'license_list' %}" class="text-decoration-none">
+                    <i class="fas fa-key me-1"></i>Licenses
+                </a>
+            </li>
+            <li class="breadcrumb-item active">
+                {% if form.instance.pk %}Edit Pricing{% else %}New Pricing{% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Pricing Details Section -->
+                <div class="mb-5">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <i class="fas fa-tag me-2 text-primary"></i>
+                        Pricing Details
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label for="id_license_product" class="form-label">License Product</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-key text-muted"></i>
+                                </span>
+                                <select name="license_product" id="id_license_product" 
+                                        class="form-select border-start-0 ps-0{% if form.license_product.errors %} is-invalid{% endif %}"
+                                        required>
+                                    <option value="">Select License Product</option>
+                                    {% for product in form.fields.license_product.queryset %}
+                                    <option value="{{ product.id }}" 
+                                            {% if form.license_product.value == product.id %}selected{% endif %}>
+                                        {{ product }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.license_product.errors %}
+                            <div class="invalid-feedback d-block">{{ form.license_product.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_metric" class="form-label">Metric</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-ruler text-muted"></i>
+                                </span>
+                                <select name="metric" id="id_metric" 
+                                        class="form-select border-start-0 ps-0{% if form.metric.errors %} is-invalid{% endif %}"
+                                        required>
+                                    <option value="">Select Metric</option>
+                                    {% for metric in form.fields.metric.queryset %}
+                                    <option value="{{ metric.id }}" 
+                                            {% if form.metric.value == metric.id %}selected{% endif %}>
+                                        {{ metric }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% if form.metric.errors %}
+                            <div class="invalid-feedback d-block">{{ form.metric.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_quantity_per_pack" class="form-label">Quantity per Pack</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-box text-muted"></i>
+                                </span>
+                                <input type="number" name="quantity_per_pack" id="id_quantity_per_pack" 
+                                       class="form-control border-start-0 ps-0{% if form.quantity_per_pack.errors %} is-invalid{% endif %}"
+                                       value="{{ form.quantity_per_pack.value|default:'1' }}"
+                                       required>
+                            </div>
+                            {% if form.quantity_per_pack.errors %}
+                            <div class="invalid-feedback d-block">{{ form.quantity_per_pack.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_price" class="form-label">Price ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-dollar-sign text-muted"></i>
+                                </span>
+                                <input type="number" step="0.01" name="price" id="id_price" 
+                                       class="form-control border-start-0 ps-0{% if form.price.errors %} is-invalid{% endif %}"
+                                       value="{{ form.instance.price|default:'' }}"
+                                       placeholder="Enter price"
+                                       required>
+                            </div>
+                            {% if form.price.errors %}
+                            <div class="invalid-feedback d-block">{{ form.price.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_valid_from" class="form-label">Valid From</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-calendar text-muted"></i>
+                                </span>
+                                <input type="date" name="valid_from" id="id_valid_from" 
+                                       class="form-control border-start-0 ps-0{% if form.valid_from.errors %} is-invalid{% endif %}"
+                                       value="{{ form.valid_from.value|date:'Y-m-d'|default:'' }}"
+                                       required>
+                            </div>
+                            {% if form.valid_from.errors %}
+                            <div class="invalid-feedback d-block">{{ form.valid_from.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_valid_to" class="form-label">Valid To (Optional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-calendar text-muted"></i>
+                                </span>
+                                <input type="date" name="valid_to" id="id_valid_to" 
+                                       class="form-control border-start-0 ps-0{% if form.valid_to.errors %} is-invalid{% endif %}"
+                                       value="{{ form.valid_to.value|date:'Y-m-d'|default:'' }}">
+                            </div>
+                            {% if form.valid_to.errors %}
+                            <div class="invalid-feedback d-block">{{ form.valid_to.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end align-items-center mt-4 pt-3 border-top">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'license_list' %}" class="btn btn-light px-4">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        {% if form.instance.pk %}
+                        <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-2"></i>
+                            {% if form.instance.pk %}Save Changes{% else %}Create Pricing{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if form.instance.pk %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Pricing</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Are you sure you want to delete this pricing? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'license_pricing_delete' form.instance.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete Pricing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .container-fluid {
+        max-width: 100%;
+    }
+
+    .dashboard-header {
+        height: var(--header-height) !important;
+        min-height: var(--header-height) !important;
+    }
+
+    .main-content {
+        margin-top: var(--header-height) !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %} 

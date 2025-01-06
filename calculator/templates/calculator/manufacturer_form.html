@@ -1,0 +1,156 @@
+{% extends 'calculator/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'manufacturer_list' %}" class="text-decoration-none">
+                    <i class="fas fa-industry me-1"></i>Manufacturers
+                </a>
+            </li>
+            <li class="breadcrumb-item active">
+                {% if object %}Edit Manufacturer{% else %}New Manufacturer{% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Form Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Basic Details Section -->
+                <div class="mb-5">
+                    <h5 class="card-title d-flex align-items-center mb-4">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        Manufacturer Details
+                    </h5>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label for="id_name" class="form-label">Manufacturer Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-industry text-muted"></i>
+                                </span>
+                                <input type="text" name="name" id="id_name" 
+                                       class="form-control border-start-0 ps-0{% if form.name.errors %} is-invalid{% endif %}"
+                                       value="{{ form.name.value|default:'' }}"
+                                       placeholder="Enter manufacturer name"
+                                       required>
+                            </div>
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_website" class="form-label">Website</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-globe text-muted"></i>
+                                </span>
+                                <input type="url" name="website" id="id_website" 
+                                       class="form-control border-start-0 ps-0{% if form.website.errors %} is-invalid{% endif %}"
+                                       value="{{ form.website.value|default:'' }}"
+                                       placeholder="Enter website URL">
+                            </div>
+                            {% if form.website.errors %}
+                            <div class="invalid-feedback d-block">{{ form.website.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="id_contact_email" class="form-label">Contact Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-envelope text-muted"></i>
+                                </span>
+                                <input type="email" name="contact_email" id="id_contact_email" 
+                                       class="form-control border-start-0 ps-0{% if form.contact_email.errors %} is-invalid{% endif %}"
+                                       value="{{ form.contact_email.value|default:'' }}"
+                                       placeholder="Enter contact email">
+                            </div>
+                            {% if form.contact_email.errors %}
+                            <div class="invalid-feedback d-block">{{ form.contact_email.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label for="id_description" class="form-label">Description</label>
+                            <textarea name="description" id="id_description" 
+                                    class="form-control{% if form.description.errors %} is-invalid{% endif %}"
+                                    placeholder="Enter manufacturer description"
+                                    rows="4">{{ form.description.value|default:'' }}</textarea>
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end align-items-center mt-5 pt-4 border-top">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'manufacturer_list' %}" class="btn btn-light px-4">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        {% if object %}
+                        <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-2"></i>
+                            {% if object %}Save Changes{% else %}Create Manufacturer{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Remove any container-fluid custom styling */
+    .container-fluid {
+        max-width: 100%;
+    }
+
+    /* Ensure proper header height and content spacing */
+    .dashboard-header {
+        height: var(--header-height) !important;
+        min-height: var(--header-height) !important;
+    }
+
+    .main-content {
+        margin-top: var(--header-height) !important;
+    }
+
+    /* Rest of your existing form styles... */
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+{% endblock %}

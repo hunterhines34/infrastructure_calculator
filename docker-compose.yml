@@ -1,0 +1,38 @@
+name: infrastructure_calculator
+
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+      - sqlite_data:/data/db
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    environment:
+      - DEBUG=0
+      - DJANGO_SETTINGS_MODULE=calculator.settings
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 calculator.wsgi:application"
+    depends_on:
+      - nginx
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certs:/etc/nginx/certs:ro
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      - web
+
+volumes:
+  sqlite_data:
+  static_volume:
+  media_volume: 

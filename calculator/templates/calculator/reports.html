@@ -1,0 +1,567 @@
+{% extends 'calculator/base.html' %}
+{% load humanize %}
+
+{% block title %}Reports - Infrastructure Calculator{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3 mb-4">Reports Dashboard</h1>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+            <i class="fas fa-chart-pie me-2"></i>Overview
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#hardware" type="button" role="tab">
+            <i class="fas fa-microchip me-2"></i>Hardware Analysis
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab">
+            <i class="fas fa-project-diagram me-2"></i>Project Metrics
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content">
+    <!-- Overview Tab -->
+    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+        <div class="row">
+            <!-- Summary Cards -->
+            <div class="col-md-6 col-xl-3 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Active Projects</h6>
+                        <h3 class="mb-0">{{ active_projects_count }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Total Hardware Cost</h6>
+                        <h3 class="mb-0">${{ total_hardware_cost|intcomma }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Total License Cost</h6>
+                        <h3 class="mb-0">${{ total_license_cost|intcomma }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Avg Project Cost</h6>
+                        <h3 class="mb-0">${{ avg_project_cost|intcomma }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Status Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">Project Status Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="projectStatusChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cost Trend Chart -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">Monthly Cost Trend</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="costTrendChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hardware Analysis Tab -->
+    <div class="tab-pane fade" id="hardware" role="tabpanel">
+        <div class="row">
+            <!-- CPU Distribution -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">CPU Distribution by Manufacturer</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="cpuChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RAM Distribution -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">RAM Type Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="ramChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GPU Distribution -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">GPU by Memory Capacity</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="gpuChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Types -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">Storage Type Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="storageChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Card Distribution -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">Network Card by Interface</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="networkChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RAM Capacity Distribution -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">RAM Capacity Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="ramCapacityChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Component Cost Table -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Component Cost Analysis</h5>
+                        <button class="btn btn-sm btn-primary" onclick="exportToCSV('componentCosts')">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="componentCosts">
+                                <thead>
+                                    <tr>
+                                        <th>Component Type</th>
+                                        <th>Average Cost</th>
+                                        <th>Total Units</th>
+                                        <th>Total Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for component in component_costs %}
+                                    <tr>
+                                        <td>{{ component.type }}</td>
+                                        <td>${{ component.avg_cost|floatformat:2|intcomma }}</td>
+                                        <td>{{ component.total_units|intcomma }}</td>
+                                        <td>${{ component.total_cost|floatformat:2|intcomma }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Metrics Tab -->
+    <div class="tab-pane fade" id="projects" role="tabpanel">
+        <div class="row">
+            <!-- Projects Table -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Project Details</h5>
+                        <button class="btn btn-sm btn-primary" onclick="exportToCSV('projectMetrics')">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="projectMetrics">
+                                <thead>
+                                    <tr>
+                                        <th>Project Name</th>
+                                        <th>Status</th>
+                                        <th>Start Date</th>
+                                        <th>Hardware Cost</th>
+                                        <th>License Cost</th>
+                                        <th>Total Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in projects %}
+                                    <tr>
+                                        <td>{{ project.name }}</td>
+                                        <td>{{ project.get_status_display }}</td>
+                                        <td>{{ project.start_date|default:"Not set" }}</td>
+                                        <td>${{ project.calculate_hardware_costs|intcomma }}</td>
+                                        <td>${{ project.calculate_license_costs|intcomma }}</td>
+                                        <td>${{ project.calculate_total_cost|intcomma }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Project Status Chart
+    new Chart(document.getElementById('projectStatusChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: {{ project_status_labels|safe }},
+            datasets: [{
+                data: {{ project_status_data|safe }},
+                backgroundColor: [
+                    'rgba(79, 70, 229, 0.2)',
+                    'rgba(16, 185, 129, 0.2)',
+                    'rgba(245, 158, 11, 0.2)',
+                    'rgba(239, 68, 68, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(79, 70, 229, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(239, 68, 68, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Cost Trend Chart
+    new Chart(document.getElementById('costTrendChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: {{ cost_trend_labels|safe }},
+            datasets: [{
+                label: 'Total Cost',
+                data: {{ cost_trend_data|safe }},
+                borderColor: 'rgba(79, 70, 229, 1)',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // CPU Distribution Chart
+    new Chart(document.getElementById('cpuChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: {{ cpu_manufacturer_labels|safe }},
+            datasets: [{
+                label: 'Number of CPUs',
+                data: {{ cpu_manufacturer_data|safe }},
+                backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                borderColor: 'rgba(79, 70, 229, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Storage Type Chart
+    new Chart(document.getElementById('storageChart').getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: {{ storage_type_labels|safe }},
+            datasets: [{
+                data: {{ storage_type_data|safe }},
+                backgroundColor: [
+                    'rgba(79, 70, 229, 0.2)',
+                    'rgba(16, 185, 129, 0.2)',
+                    'rgba(245, 158, 11, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(79, 70, 229, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // RAM Type Distribution Chart
+    new Chart(document.getElementById('ramChart').getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: {{ ram_type_labels|safe }},
+            datasets: [{
+                data: {{ ram_type_data|safe }},
+                backgroundColor: [
+                    'rgba(79, 70, 229, 0.2)',
+                    'rgba(16, 185, 129, 0.2)',
+                    'rgba(245, 158, 11, 0.2)',
+                    'rgba(239, 68, 68, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(79, 70, 229, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(239, 68, 68, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // GPU Memory Distribution Chart
+    new Chart(document.getElementById('gpuChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: {{ gpu_memory_labels|safe }},
+            datasets: [{
+                label: 'Number of GPUs',
+                data: {{ gpu_memory_data|safe }},
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                borderColor: 'rgba(16, 185, 129, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Network Card Interface Distribution Chart
+    new Chart(document.getElementById('networkChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: {{ network_interface_labels|safe }},
+            datasets: [{
+                data: {{ network_interface_data|safe }},
+                backgroundColor: [
+                    'rgba(245, 158, 11, 0.2)',
+                    'rgba(239, 68, 68, 0.2)',
+                    'rgba(79, 70, 229, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(79, 70, 229, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // RAM Capacity Distribution Chart
+    new Chart(document.getElementById('ramCapacityChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: {{ ram_capacity_labels|safe }},
+            datasets: [{
+                label: 'Number of RAM Modules',
+                data: {{ ram_capacity_data|safe }},
+                backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                borderColor: 'rgba(79, 70, 229, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+
+function exportToCSV(tableId) {
+    const table = document.getElementById(tableId);
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (const row of rows) {
+        const cols = row.querySelectorAll('td,th');
+        const rowArray = Array.from(cols).map(col => {
+            let text = col.innerText;
+            if (text.includes(',') || text.includes('"')) {
+                text = `"${text.replace(/"/g, '""')}"`;
+            }
+            return text;
+        });
+        csv.push(rowArray.join(','));
+    }
+    
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `${tableId}-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+const markReadButtons = document.querySelectorAll('.mark-read-btn');
+        
+        markReadButtons.forEach(button => {
+            button.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const notificationId = this.dataset.notificationId;
+                const listItem = this.closest('.dropdown-item');
+                
+                try {
+                    const response = await fetch(`/notifications/${notificationId}/mark-read/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Your existing notification handling code
+                        handleNotificationUpdate(listItem);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+
+        function handleNotificationUpdate(listItem) {
+            if (listItem) {
+                listItem.remove();
+                
+                // Update the badge count
+                const badge = document.querySelector('.badge.bg-danger.notification-badge');
+                if (badge) {
+                    const currentCount = parseInt(badge.textContent);
+                    if (currentCount <= 1) {
+                        badge.remove();
+                        
+                        // Update dropdown content to show "No new notifications"
+                        const dropdownMenu = document.querySelector('.dropdown-menu[aria-labelledby="notificationsDropdown"]');
+                        if (dropdownMenu) {
+                            dropdownMenu.innerHTML = `
+                                <div class="p-2 border-bottom">
+                                    <h6 class="mb-0">Notifications</h6>
+                                </div>
+                                <div class="p-3 text-center text-muted">
+                                    <p class="mb-0">No new notifications</p>
+                                </div>`;
+                        }
+                    } else {
+                        badge.textContent = currentCount - 1;
+                    }
+                }
+            }
+        }
+</script>
+{% endblock %} 
