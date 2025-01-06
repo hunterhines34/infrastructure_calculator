@@ -326,6 +326,34 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Main search across all tabs
+        const mainSearch = document.getElementById('mainProjectSearch');
+        if (mainSearch) {
+            mainSearch.addEventListener('input', function(e) {
+                const searchTerm = e.target.value;
+                let foundMatch = false;
+                let firstMatchTab = null;
+
+                // Search across all tabs
+                document.querySelectorAll('.tab-pane').forEach(tabPane => {
+                    const hasMatches = filterProjects(searchTerm, tabPane.id);
+                    if (hasMatches && !foundMatch) {
+                        firstMatchTab = tabPane.id;
+                        foundMatch = true;
+                    }
+                });
+
+                // If we found matches, switch to the first tab with matches
+                if (foundMatch && searchTerm.length > 0) {
+                    // Find and click the tab button
+                    const tabButton = document.querySelector(`button[data-bs-target="#${firstMatchTab}"]`);
+                    if (tabButton) {
+                        bootstrap.Tab.getOrCreateInstance(tabButton).show();
+                    }
+                }
+            });
+        }
+
         // Tab-specific search
         const searchInputs = document.querySelectorAll('.project-search');
         searchInputs.forEach(searchInput => {
