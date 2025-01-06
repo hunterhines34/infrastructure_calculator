@@ -19,6 +19,7 @@ A Django-based web application for planning and managing server configurations, 
 
 ### Frontend
 - **Bootstrap 5.3.3** - CSS framework for responsive design
+- **Tailwind CSS 3.4.17** - CSS framework for responsive design
 - **jQuery 3.4.1** - JavaScript library
 - **Font Awesome** - Icon library
 - **Select2** - Enhanced select boxes
@@ -50,7 +51,7 @@ A Django-based web application for planning and managing server configurations, 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/[your-username]/server-config-calculator.git
+   git clone https://github.com/hunterhines34/server-config-calculator.git
    cd server-config-calculator
    ```
 
@@ -108,7 +109,7 @@ Prerequisites:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/[your-username]/server-config-calculator.git
+   git clone https://github.com/hunterhines34/server-config-calculator.git
    cd server-config-calculator
    ```
 
