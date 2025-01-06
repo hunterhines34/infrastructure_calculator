@@ -51,8 +51,8 @@ A Django-based web application for planning and managing server configurations, 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/hunterhines34/server-config-calculator.git
-   cd server-config-calculator
+   git clone https://github.com/hunterhines34/infrastructure_calculator.git
+   cd infrastructure_calculator
    ```
 
 2. Create and activate a virtual environment:
@@ -109,8 +109,8 @@ Prerequisites:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/hunterhines34/server-config-calculator.git
-   cd server-config-calculator
+   git clone https://github.com/hunterhines34/infrastructure_calculator.git
+   cd infrastructure_calculator
    ```
 
 2. Create SSL certificates (for development only):
@@ -211,4 +211,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-For support, please open an issue in the GitHub repository or contact the maintainers. 
+For support, please open an issue in the GitHub repository. 
